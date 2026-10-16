@@ -88,10 +88,10 @@ class AlarmPage extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              color: alarm.isActive ? Colors.white.withOpacity(0.15) : Colors.red.withOpacity(0.15),
+              color: alarm.isActive ? Colors.white.withValues(alpha: 0.15) : Colors.red.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
               ),
             ),
             child: Row(
@@ -114,7 +114,7 @@ class AlarmPage extends StatelessWidget {
                         content: const Text("Alarm deleted"),
                         behavior: SnackBarBehavior.floating,
                         margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                        backgroundColor: Colors.white.withOpacity(0.2),
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     );

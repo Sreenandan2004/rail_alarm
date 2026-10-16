@@ -156,6 +156,7 @@ class _HomePageState extends State<HomePage> {
         
         double distanceInKm = distanceInMeters / 1000;
 
+        if (!mounted) return;
         setState(() {
           _alarms.add(
             AlarmInfo(
@@ -180,10 +181,11 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Could not find '$name'. Check spelling or internet."),
-          backgroundColor: Colors.red.withOpacity(0.8),
+          backgroundColor: Colors.red.withValues(alpha: 0.8),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -225,9 +227,9 @@ class _HomePageState extends State<HomePage> {
               currentIndex: _selectedIndex,
               paddingR: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               marginR: const EdgeInsets.symmetric(horizontal: 40),
-              backgroundColor: Colors.black.withOpacity(0.8),
+              backgroundColor: Colors.black.withValues(alpha: 0.8),
               unselectedItemColor: Colors.white,
-              outlineBorderColor: Colors.white.withOpacity(0.2),
+              outlineBorderColor: Colors.white.withValues(alpha: 0.2),
               
               onTap: (int index) {
                 setState(() {
@@ -294,9 +296,9 @@ class _HomePageState extends State<HomePage> {
                   cursorColor: Colors.white,
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     hintText: "Enter location",
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
                     prefixIcon: const Icon(Icons.search, color: Colors.white70),
                     contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                     border: OutlineInputBorder(
