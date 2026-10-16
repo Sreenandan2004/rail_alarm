@@ -50,6 +50,16 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _initServices() async {
     await _stationService.init();
+    try {
+      final initialAlarms = await _isarService.getAllAlarms();
+      if (mounted) {
+        setState(() {
+          _alarms = initialAlarms;
+        });
+        _runAdaptiveCheck();
+      }
+    } catch (_) {}
+
     _alarmsSubscription = _isarService.watchAlarms().listen((alarms) {
       if (mounted) {
         setState(() {
@@ -346,19 +356,27 @@ class _HomePageState extends State<HomePage> {
       _searchFocusNode.unfocus();
       setState(() {
         _suggestions = [];
+        _selectedIndex = 1; // Automatically navigate to the Alarms tab to view newly added alarm
       });
 
       if (mounted) {
         final distText = distanceInKm != null
-            ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+            ? " (${distanceInKm.toStringAsFixed(1)} km away)"
             : "";
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              "Alarm set for ${station.displayName}! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+              "Alarm active for ${station.displayName}!$distText",
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.green.shade800,
             behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: "VIEW",
+              textColor: Colors.white,
+              onPressed: () {
+                if (mounted) setState(() => _selectedIndex = 1);
+              },
+            ),
           ),
         );
       }
@@ -497,19 +515,27 @@ class _HomePageState extends State<HomePage> {
         _searchFocusNode.unfocus();
         setState(() {
           _suggestions = [];
+          _selectedIndex = 1;
         });
 
         if (mounted) {
           final distText = distanceInKm != null
-              ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+              ? " (${distanceInKm.toStringAsFixed(1)} km away)"
               : "";
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Alarm set for $name! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+                "Alarm active for $name!$distText",
               ),
-              backgroundColor: Colors.green,
+              backgroundColor: Colors.green.shade800,
               behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: "VIEW",
+                textColor: Colors.white,
+                onPressed: () {
+                  if (mounted) setState(() => _selectedIndex = 1);
+                },
+              ),
             ),
           );
         }
@@ -609,7 +635,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildNavButton(
-                  icon: Icons.account_circle,
+                  icon: Icons.search,
                   isSelected: _selectedIndex == 0,
                   onTap: () {
                     if (_selectedIndex != 0) {
