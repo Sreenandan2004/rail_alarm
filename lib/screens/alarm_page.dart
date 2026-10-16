@@ -1,18 +1,28 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/alarm_info.dart';
+import '../models/tracking_state.dart';
+import '../services/adaptive_location_service.dart';
+import '../utils/geo_utils.dart';
 
 class AlarmPage extends StatelessWidget {
   final List<AlarmInfo> alarms;
   final Function(String) onDelete;
   final Function(String, bool)? onToggle;
+  final Function(String, double)? onUpdateLeadDistance;
+  final Position? currentPosition;
+  final AdaptiveTrackingDecision? lastDecision;
 
   const AlarmPage({
-    super.key, 
-    required this.alarms, 
+    super.key,
+    required this.alarms,
     required this.onDelete,
     this.onToggle,
+    this.onUpdateLeadDistance,
+    this.currentPosition,
+    this.lastDecision,
   });
 
   @override
@@ -40,7 +50,7 @@ class AlarmPage extends StatelessWidget {
               endIndent: 20,
             ),
             if (alarms.isNotEmpty) ...[
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
               Text(
                 "ALL ALARMS",
                 style: GoogleFonts.victorMono(
@@ -49,7 +59,7 @@ class AlarmPage extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
             Expanded(
               child: alarms.isEmpty
@@ -90,15 +100,53 @@ class AlarmPage extends StatelessWidget {
   }
 
   Widget _buildGlassCard(BuildContext context, AlarmInfo alarm) {
+    double? distKm;
+    if (currentPosition != null) {
+      distKm = GeoUtils.haversineDistanceKm(
+        currentPosition!.latitude,
+        currentPosition!.longitude,
+        alarm.latitude,
+        alarm.longitude,
+      );
+    }
+
+    String subtitleText;
+    if (!alarm.isActive) {
+      subtitleText = "Alarm Inactive / Paused";
+    } else if (distKm != null) {
+      final tier = AdaptiveLocationService.evaluateTier(
+        distanceKm: distKm,
+        leadDistanceKm: alarm.leadDistanceKm,
+      );
+      String tierTag;
+      switch (tier) {
+        case DistanceTier.far:
+          tierTag = "Far (>50km • Low Power)";
+          break;
+        case DistanceTier.approaching:
+          tierTag = "Approaching (Balanced)";
+          break;
+        case DistanceTier.near:
+          tierTag = "Near (High GPS)";
+          break;
+        case DistanceTier.alarmRange:
+          tierTag = "Alarm Trigger Boundary!";
+          break;
+      }
+      subtitleText = "${distKm.toStringAsFixed(1)} km away • $tierTag";
+    } else {
+      subtitleText = "Tracking Active (<${alarm.leadDistanceKm.toStringAsFixed(0)} km)";
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      height: 80,
+      height: 92,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: alarm.isActive
                   ? Colors.white.withValues(alpha: 0.15)
@@ -109,7 +157,6 @@ class AlarmPage extends StatelessWidget {
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: InkWell(
@@ -125,7 +172,7 @@ class AlarmPage extends StatelessWidget {
                         Text(
                           alarm.location,
                           style: GoogleFonts.urbanist(
-                            fontSize: 20,
+                            fontSize: 19,
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             decoration: alarm.isActive
@@ -137,13 +184,47 @@ class AlarmPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          alarm.isActive ? "Tracking Active (<10 km)" : "Alarm Inactive / Triggered",
+                          subtitleText,
                           style: GoogleFonts.victorMono(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: alarm.isActive ? Colors.greenAccent : Colors.white60,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Interactive lead-distance tag chip
+                GestureDetector(
+                  onTap: () {
+                    if (onUpdateLeadDistance != null) {
+                      // Cycle through 2km -> 5km -> 10km
+                      double nextLead = 10.0;
+                      if (alarm.leadDistanceKm >= 10.0) {
+                        nextLead = 2.0;
+                      } else if (alarm.leadDistanceKm <= 2.0) {
+                        nextLead = 5.0;
+                      }
+                      onUpdateLeadDistance!(alarm.id, nextLead);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white30),
+                    ),
+                    child: Text(
+                      "<${alarm.leadDistanceKm.toStringAsFixed(0)}km",
+                      style: GoogleFonts.victorMono(
+                        fontSize: 11,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

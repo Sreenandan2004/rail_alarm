@@ -9,6 +9,8 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
 import '../models/alarm_info.dart';
 import '../models/station.dart';
+import '../models/tracking_state.dart';
+import '../services/adaptive_location_service.dart';
 import '../services/isar_service.dart';
 import '../services/station_service.dart';
 import 'alarm_page.dart';
@@ -28,10 +30,14 @@ class _HomePageState extends State<HomePage> {
   List<AlarmInfo> _alarms = [];
   List<Station> _suggestions = [];
 
+  double _selectedLeadDistance = 10.0;
+  Position? _currentPosition;
+  AdaptiveTrackingDecision? _lastDecision;
+  Timer? _adaptivePollTimer;
+
   final IsarService _isarService = IsarService();
   final StationService _stationService = StationService();
 
-  StreamSubscription<Position>? _positionStreamSubscription;
   StreamSubscription<List<AlarmInfo>>? _alarmsSubscription;
 
   @override
@@ -48,13 +54,14 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           _alarms = alarms;
         });
+        _runAdaptiveCheck();
       }
     });
   }
 
   @override
   void dispose() {
-    _positionStreamSubscription?.cancel();
+    _adaptivePollTimer?.cancel();
     _alarmsSubscription?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
@@ -76,7 +83,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<Position> _determinePosition() async {
+  Future<Position> _determinePosition({LocationAccuracy accuracy = LocationAccuracy.high}) async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return Future.error('Location services are disabled.');
 
@@ -90,37 +97,71 @@ class _HomePageState extends State<HomePage> {
     if (permission == LocationPermission.deniedForever) {
       return Future.error('Location permissions are permanently denied.');
     }
-    return await Geolocator.getCurrentPosition();
+    return await Geolocator.getCurrentPosition(
+      locationSettings: LocationSettings(accuracy: accuracy),
+    );
   }
 
   void _startTracking() {
-    final LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 100,
-    );
-
-    _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position position) {
-      _checkAlarms(position);
-    });
+    _runAdaptiveCheck();
   }
 
-  void _checkAlarms(Position currentPosition) {
-    for (var alarm in _alarms) {
-      if (!alarm.isActive) continue;
+  /// Adaptive Distance-Tiered Polling loop that saves battery life
+  Future<void> _runAdaptiveCheck() async {
+    _adaptivePollTimer?.cancel();
 
-      double distanceInMeters = Geolocator.distanceBetween(
-        currentPosition.latitude,
-        currentPosition.longitude,
-        alarm.latitude,
-        alarm.longitude,
+    final activeAlarms = _alarms.where((a) => a.isActive).toList();
+    if (activeAlarms.isEmpty) return;
+
+    try {
+      // Determine optimal hardware accuracy for current state
+      final currentAccuracy = _lastDecision?.locationAccuracy ?? LocationAccuracy.high;
+      final position = await _determinePosition(accuracy: currentAccuracy);
+
+      if (!mounted) return;
+      setState(() {
+        _currentPosition = position;
+      });
+
+      // 1. Evaluate all active alarms
+      for (final alarm in activeAlarms) {
+        final decision = AdaptiveLocationService.evaluate(
+          currentPosition: position,
+          alarm: alarm,
+        );
+
+        if (decision.shouldTrigger) {
+          await _triggerAlarm(alarm);
+        }
+      }
+
+      // 2. Compute safe sleep interval for the closest remaining active alarm
+      final remainingActive = _alarms.where((a) => a.isActive).toList();
+      if (remainingActive.isEmpty) return;
+
+      final closest = AdaptiveLocationService.findClosestActiveAlarm(
+        currentPosition: position,
+        alarms: remainingActive,
       );
 
-      double distanceInKm = distanceInMeters / 1000;
+      if (closest != null) {
+        final decision = AdaptiveLocationService.evaluate(
+          currentPosition: position,
+          alarm: closest,
+        );
 
-      if (distanceInKm < 10) {
-        _triggerAlarm(alarm);
+        if (mounted) {
+          setState(() {
+            _lastDecision = decision;
+          });
+        }
+
+        // Schedule next check dynamically using the Safe Sleep formula
+        _adaptivePollTimer = Timer(decision.sleepInterval, _runAdaptiveCheck);
       }
+    } catch (_) {
+      // Temporary GPS dropout (e.g. tunnel), retry in 30 seconds
+      _adaptivePollTimer = Timer(const Duration(seconds: 30), _runAdaptiveCheck);
     }
   }
 
@@ -155,6 +196,7 @@ class _HomePageState extends State<HomePage> {
         SnackBar(
           content: Text("✅ Arriving at ${alarm.location}! Alarm scheduled for 1 minute from now."),
           backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -179,6 +221,7 @@ class _HomePageState extends State<HomePage> {
       latitude: station.latitude,
       longitude: station.longitude,
       isActive: true,
+      leadDistanceKm: _selectedLeadDistance,
     );
 
     await _isarService.saveAlarm(newAlarm);
@@ -195,12 +238,15 @@ class _HomePageState extends State<HomePage> {
           : "";
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Alarm set for ${station.displayName}!$distText"),
+          content: Text(
+            "Alarm set for ${station.displayName}! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+          ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
       );
     }
+    _runAdaptiveCheck();
   }
 
   Future<void> _addNewAlarm(String query) async {
@@ -232,6 +278,7 @@ class _HomePageState extends State<HomePage> {
           latitude: lat,
           longitude: lng,
           isActive: true,
+          leadDistanceKm: _selectedLeadDistance,
         );
 
         await _isarService.saveAlarm(newAlarm);
@@ -247,12 +294,15 @@ class _HomePageState extends State<HomePage> {
               : "";
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Alarm set!$distText"),
+              content: Text(
+                "Alarm set! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+              ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
           );
         }
+        _runAdaptiveCheck();
         return;
       }
     }
@@ -296,6 +346,7 @@ class _HomePageState extends State<HomePage> {
           latitude: searchedLocation.latitude,
           longitude: searchedLocation.longitude,
           isActive: true,
+          leadDistanceKm: _selectedLeadDistance,
         );
 
         await _isarService.saveAlarm(newAlarm);
@@ -312,11 +363,14 @@ class _HomePageState extends State<HomePage> {
             : "";
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Alarm set for $name!$distText"),
+            content: Text(
+              "Alarm set for $name! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
         );
+        _runAdaptiveCheck();
       }
     } catch (e) {
       if (!mounted) return;
@@ -332,10 +386,17 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _deleteAlarm(String id) async {
     await _isarService.deleteAlarm(id);
+    _runAdaptiveCheck();
   }
 
   Future<void> _toggleAlarm(String id, bool isActive) async {
     await _isarService.toggleAlarmActive(id, isActive);
+    _runAdaptiveCheck();
+  }
+
+  Future<void> _updateAlarmLeadDistance(String id, double leadDistanceKm) async {
+    await _isarService.updateAlarmLeadDistance(id, leadDistanceKm);
+    _runAdaptiveCheck();
   }
 
   @override
@@ -359,6 +420,9 @@ class _HomePageState extends State<HomePage> {
                   alarms: _alarms,
                   onDelete: _deleteAlarm,
                   onToggle: _toggleAlarm,
+                  onUpdateLeadDistance: _updateAlarmLeadDistance,
+                  currentPosition: _currentPosition,
+                  lastDecision: _lastDecision,
                 ),
           bottomNavigationBar: _buildCustomBottomBar(),
         ),
@@ -477,7 +541,7 @@ class _HomePageState extends State<HomePage> {
                   height: 100,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
@@ -521,13 +585,15 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 14),
+                _buildLeadDistanceSelector(),
                 if (_suggestions.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   _buildSuggestionsList(),
                 ],
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
                 Text(
-                  "Type your Location.\nAlarm will ring 10 kms\nbefore the destination.",
+                  "Type your Location.\nAlarm will ring ${_selectedLeadDistance.toStringAsFixed(0)} kms\nbefore the destination.",
                   textAlign: TextAlign.center,
                   style: GoogleFonts.victorMono(
                     color: Colors.white70,
@@ -538,6 +604,49 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 140),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeadDistanceSelector() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildModeChip(distance: 2.0, label: "2 km Bus/Car"),
+        const SizedBox(width: 8),
+        _buildModeChip(distance: 5.0, label: "5 km Road"),
+        const SizedBox(width: 8),
+        _buildModeChip(distance: 10.0, label: "10 km Train"),
+      ],
+    );
+  }
+
+  Widget _buildModeChip({required double distance, required String label}) {
+    final isSelected = _selectedLeadDistance == distance;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedLeadDistance = distance;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.white : Colors.white24,
+          ),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.victorMono(
+            color: isSelected ? Colors.black : Colors.white,
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
       ),

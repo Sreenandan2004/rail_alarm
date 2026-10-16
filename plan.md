@@ -19,18 +19,16 @@ RailAlarm is an offline-first, battery-efficient, location-triggered wake-up com
 
 ---
 
-## Remaining Development Phases
-
-### Phase 2: Adaptive GPS Polling & Battery Engine 🔋
-* **Objective**: Ensure the app consumes $< 5\%$ battery over an 8–10 hour journey.
-* **Key Deliverables**:
-  1. **Dynamic "Safe Sleep" Algorithm**: Compute adaptive polling intervals dynamically based on remaining distance and vehicle velocity:
-     $$\Delta t_{\text{sleep}} = \frac{D - D_{\text{alarm}}}{V_{\text{max}}}$$
-  2. **Multi-Tier Accuracy Switching**: Use zero-battery cellular tower/network coarse location when $> 15\text{ km}$ away; switch to high-accuracy GNSS only on approach.
-  3. **Stationary / Traffic Back-off**: Pause or lengthen polling when vehicle speed drops to $\approx 0\text{ km/h}$ (traffic jams, station halts).
-  4. **Configurable Lead Distance**: Allow custom trigger distances (e.g., $2\text{ km}$ for city buses/cars, $5\text{ km} - 10\text{ km}$ for highways and express trains).
+### Phase 2: Adaptive GPS Polling & Battery Engine ✅
+- **Dynamic "Safe Sleep" Algorithm**: Implemented dynamic interval computation ($\Delta t_{\text{sleep}} = \frac{D - D_{\text{alarm}}}{V_{\text{max}}}$) in `AdaptiveLocationService`.
+- **Distance-Tiered Accuracy**: Tier switching across Far (>50km / Low Power), Approaching (15-50km / Balanced), Near (<15km / High GPS), and Alarm Range.
+- **Stationary Traffic Back-off**: Automatically backs off polling intervals to tier maximums when vehicle speed drops below 3 km/h.
+- **Configurable Lead Distance**: Multi-modal travel presets for Bus/Car (2 km), Road/Town (5 km), and Express Train (10 km) on home search and alarm cards.
+- **Unit Test Coverage**: Comprehensive suite of 11 unit tests covering Haversine formula, ETA calculation, tier classification, and safe-sleep bounds.
 
 ---
+
+## Remaining Development Phases
 
 ### Phase 3: The Dedicated Ringer / Wake-Up Screen ⏰
 * **Objective**: Provide a sleep-resistant, full-screen UI when the alarm rings.

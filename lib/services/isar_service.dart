@@ -97,6 +97,22 @@ class IsarService {
     });
   }
 
+  /// Update lead distance of an alarm
+  Future<void> updateAlarmLeadDistance(String alarmId, double leadDistanceKm) async {
+    if (kIsWeb) {
+      final index = _webAlarms.indexWhere((a) => a.id == alarmId);
+      if (index >= 0) {
+        _webAlarms[index] = _webAlarms[index].copyWith(leadDistanceKm: leadDistanceKm);
+        _webStreamController.add(List.unmodifiable(_webAlarms));
+      }
+      return;
+    }
+    final all = await getAllAlarms();
+    final match = all.firstWhere((a) => a.id == alarmId);
+    final updated = match.copyWith(leadDistanceKm: leadDistanceKm);
+    await saveAlarm(updated);
+  }
+
   /// Get all alarms
   Future<List<AlarmInfo>> getAllAlarms() async {
     if (kIsWeb) {
