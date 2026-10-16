@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 import 'package:geolocator/geolocator.dart';
 import '../models/alarm_info.dart';
