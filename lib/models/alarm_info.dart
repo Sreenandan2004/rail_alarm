@@ -34,4 +34,20 @@ class AlarmInfo {
       isActive: entity.isActive,
     );
   }
+
+  AlarmInfo copyWith({
+    String? id,
+    String? location,
+    double? latitude,
+    double? longitude,
+    bool? isActive,
+  }) {
+    return AlarmInfo(
+      id: id ?? this.id,
+      location: location ?? this.location,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      isActive: isActive ?? this.isActive,
+    );
+  }
 }

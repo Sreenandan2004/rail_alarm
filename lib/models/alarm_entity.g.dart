@@ -15,7 +15,7 @@ extension GetAlarmEntityCollection on Isar {
 
 const AlarmEntitySchema = CollectionSchema(
   name: r'AlarmEntity',
-  id: -6964666276016564105,
+  id: -6964666276016564224,
   properties: {
     r'alarmId': PropertySchema(
       id: 0,
@@ -55,7 +55,7 @@ const AlarmEntitySchema = CollectionSchema(
   idName: r'isarId',
   indexes: {
     r'alarmId': IndexSchema(
-      id: 635271235571588173,
+      id: 635271235571588224,
       name: r'alarmId',
       unique: true,
       replace: true,
