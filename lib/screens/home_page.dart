@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:android_intent_plus/android_intent.dart';
@@ -125,6 +125,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _setSystemAlarm(String message, int hour, int minute) {
+    if (kIsWeb) return;
     final intent = AndroidIntent(
       action: 'android.intent.action.SET_ALARM',
       arguments: <String, dynamic>{
@@ -206,6 +207,56 @@ class _HomePageState extends State<HomePage> {
     final name = query.trim();
     if (name.isEmpty) return;
 
+    // Check if coordinates were entered (e.g. "12.9716, 77.5946")
+    final coordRegex = RegExp(r'^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$');
+    final coordMatch = coordRegex.firstMatch(name);
+    if (coordMatch != null) {
+      final lat = double.tryParse(coordMatch.group(1)!);
+      final lng = double.tryParse(coordMatch.group(3)!);
+      if (lat != null && lng != null) {
+        double? distanceInKm;
+        try {
+          Position currentPosition = await _determinePosition();
+          double distanceInMeters = Geolocator.distanceBetween(
+            currentPosition.latitude,
+            currentPosition.longitude,
+            lat,
+            lng,
+          );
+          distanceInKm = distanceInMeters / 1000;
+        } catch (_) {}
+
+        final newAlarm = AlarmInfo(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          location: "Location (${lat.toStringAsFixed(3)}, ${lng.toStringAsFixed(3)})",
+          latitude: lat,
+          longitude: lng,
+          isActive: true,
+        );
+
+        await _isarService.saveAlarm(newAlarm);
+        _searchController.clear();
+        _searchFocusNode.unfocus();
+        setState(() {
+          _suggestions = [];
+        });
+
+        if (mounted) {
+          final distText = distanceInKm != null
+              ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+              : "";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Alarm set!$distText"),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
     final offlineMatches = _stationService.search(name, limit: 1);
     if (offlineMatches.isNotEmpty) {
       await _addStationAlarm(offlineMatches.first);
@@ -215,7 +266,7 @@ class _HomePageState extends State<HomePage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Searching for '$name' via online maps..."),
+        content: Text("Searching for '$name'..."),
         duration: const Duration(seconds: 1),
         backgroundColor: Colors.black54,
         behavior: SnackBarBehavior.floating,
@@ -261,7 +312,7 @@ class _HomePageState extends State<HomePage> {
             : "";
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Alarm set!$distText"),
+            content: Text("Alarm set for $name!$distText"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -271,7 +322,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Could not find '$name'. Check station code or spelling."),
+          content: Text("Could not find '$name'. Try another place name or enter coordinates (lat, lng)."),
           backgroundColor: Colors.red.withValues(alpha: 0.8),
           behavior: SnackBarBehavior.floating,
         ),
@@ -309,38 +360,86 @@ class _HomePageState extends State<HomePage> {
                   onDelete: _deleteAlarm,
                   onToggle: _toggleAlarm,
                 ),
-          bottomNavigationBar: Container(
-            height: 120,
-            alignment: Alignment.bottomCenter,
-            padding: const EdgeInsets.only(bottom: 20),
-            child: CrystalNavigationBar(
-              currentIndex: _selectedIndex,
-              paddingR: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              marginR: const EdgeInsets.symmetric(horizontal: 40),
-              backgroundColor: Colors.black.withValues(alpha: 0.8),
-              unselectedItemColor: Colors.white,
-              outlineBorderColor: Colors.white.withValues(alpha: 0.2),
-              onTap: (int index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              },
-              items: [
-                CrystalNavigationBarItem(
-                  icon: Icons.home_filled,
-                  unselectedIcon: Icons.home_outlined,
-                  selectedColor: Colors.white,
+          bottomNavigationBar: _buildCustomBottomBar(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCustomBottomBar() {
+    return Container(
+      height: 100,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.only(bottom: 24),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(40),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.75),
+              borderRadius: BorderRadius.circular(40),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildNavButton(
+                  icon: Icons.account_circle,
+                  isSelected: _selectedIndex == 0,
+                  onTap: () {
+                    if (_selectedIndex != 0) {
+                      setState(() => _selectedIndex = 0);
+                    }
+                  },
                 ),
-                CrystalNavigationBarItem(
+                const SizedBox(width: 8),
+                _buildNavButton(
                   icon: Icons.alarm,
-                  unselectedIcon: Icons.alarm_off,
-                  selectedColor: Colors.white,
+                  isSelected: _selectedIndex == 1,
+                  onTap: () {
+                    if (_selectedIndex != 1) {
+                      setState(() => _selectedIndex = 1);
+                    }
+                  },
                 ),
               ],
             ),
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildNavButton({
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isSelected
+              ? Colors.white
+              : Colors.white.withValues(alpha: 0.12),
+        ),
+        child: Icon(
+          icon,
+          size: 28,
+          color: isSelected
+              ? Colors.black
+              : Colors.white.withValues(alpha: 0.45),
+        ),
+      ),
     );
   }
 
@@ -372,10 +471,11 @@ class _HomePageState extends State<HomePage> {
                   endIndent: 20,
                 ),
                 const SizedBox(height: 30),
-                const Icon(
-                  Icons.train_outlined,
-                  size: 100,
-                  color: Colors.white,
+                Image.asset(
+                  'assets/images/bus_railway.png',
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 40),
                 TextField(
@@ -388,19 +488,33 @@ class _HomePageState extends State<HomePage> {
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.2),
-                    hintText: "Enter station name or code (e.g. NDLS)",
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-                    prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                    hintText: "Enter location",
+                    hintStyle: GoogleFonts.urbanist(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 16,
+                    ),
                     suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.close, color: Colors.white70),
-                            onPressed: () {
-                              _searchController.clear();
-                              _onSearchChanged('');
-                            },
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.close, color: Colors.white70),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  _onSearchChanged('');
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.search, color: Colors.white70),
+                                onPressed: () => _addNewAlarm(_searchController.text),
+                              ),
+                            ],
                           )
-                        : null,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+                        : IconButton(
+                            icon: const Icon(Icons.search, color: Colors.white70),
+                            onPressed: () => _addNewAlarm(_searchController.text),
+                          ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -413,7 +527,7 @@ class _HomePageState extends State<HomePage> {
                 ],
                 const SizedBox(height: 30),
                 Text(
-                  "Offline Indian Railways Stations Search.\nAlarm triggers automatically 10 km\nbefore the destination station.",
+                  "Type your Location.\nAlarm will ring 10 kms\nbefore the destination.",
                   textAlign: TextAlign.center,
                   style: GoogleFonts.victorMono(
                     color: Colors.white70,

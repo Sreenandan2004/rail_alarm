@@ -62,7 +62,17 @@ class AlarmPage extends StatelessWidget {
                       },
                     ),
             ),
-            const SizedBox(height: 100), // Space for NavBar
+            const SizedBox(height: 16),
+            Text(
+              "App Developed by\nSreenandan S",
+              textAlign: TextAlign.center,
+              style: GoogleFonts.victorMono(
+                color: Colors.white70,
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 90), // Space for custom NavBar
           ],
         ),
       ),
@@ -72,9 +82,9 @@ class AlarmPage extends StatelessWidget {
   Widget _buildEmptyState() {
     return Center(
       child: Text(
-        "No active alarms.\nSearch a station to add one!",
+        "No active alarms.\nEnter a location to add one!",
         textAlign: TextAlign.center,
-        style: GoogleFonts.urbanist(color: Colors.white, fontSize: 20),
+        style: GoogleFonts.urbanist(color: Colors.white70, fontSize: 18),
       ),
     );
   }
