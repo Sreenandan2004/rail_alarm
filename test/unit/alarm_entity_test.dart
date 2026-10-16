@@ -37,6 +37,24 @@ void main() {
       expect(info.latitude, 22.5839);
       expect(info.longitude, 88.3426);
       expect(info.isActive, isFalse);
+      expect(info.leadDistanceKm, 10.0);
+    });
+
+    test('faithfully preserves custom lead distance (e.g. 2.0 km for bus/car, 5.0 km for road)', () {
+      final busAlarm = AlarmInfo(
+        id: 'BUS_STOP_1',
+        location: 'Kozhikode Bus Terminal',
+        latitude: 11.2588,
+        longitude: 75.7804,
+        isActive: true,
+        leadDistanceKm: 2.0,
+      );
+
+      final entity = busAlarm.toEntity();
+      final restored = AlarmInfo.fromEntity(entity);
+
+      expect(restored.location, 'Kozhikode Bus Terminal');
+      expect(restored.leadDistanceKm, 2.0);
     });
   });
 }

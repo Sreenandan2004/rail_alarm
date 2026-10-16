@@ -111,7 +111,14 @@ class _HomePageState extends State<HomePage> {
     _adaptivePollTimer?.cancel();
 
     final activeAlarms = _alarms.where((a) => a.isActive).toList();
-    if (activeAlarms.isEmpty) return;
+    if (activeAlarms.isEmpty) {
+      if (mounted && _lastDecision != null) {
+        setState(() {
+          _lastDecision = null;
+        });
+      }
+      return;
+    }
 
     try {
       // Determine optimal hardware accuracy for current state
@@ -137,7 +144,15 @@ class _HomePageState extends State<HomePage> {
 
       // 2. Compute safe sleep interval for the closest remaining active alarm
       final remainingActive = _alarms.where((a) => a.isActive).toList();
-      if (remainingActive.isEmpty) return;
+      if (remainingActive.isEmpty) {
+        _adaptivePollTimer?.cancel();
+        if (mounted) {
+          setState(() {
+            _lastDecision = null;
+          });
+        }
+        return;
+      }
 
       final closest = AdaptiveLocationService.findClosestActiveAlarm(
         currentPosition: position,
@@ -166,6 +181,16 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _triggerAlarm(AlarmInfo alarm) async {
+    // Immediately mark inactive locally to avoid duplicate trigger race conditions
+    if (mounted) {
+      setState(() {
+        final idx = _alarms.indexWhere((a) => a.id == alarm.id);
+        if (idx != -1) {
+          _alarms[idx] = _alarms[idx].copyWith(isActive: false);
+        }
+      });
+    }
+
     final success = await AlarmDispatchService.dispatchSystemAlarm(
       locationName: alarm.location,
     );

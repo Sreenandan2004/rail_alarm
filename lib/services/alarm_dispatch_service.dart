@@ -11,7 +11,13 @@ class AlarmDispatchService {
     DateTime? scheduledTime,
     bool skipUi = true,
   }) async {
-    final targetTime = scheduledTime ?? DateTime.now().add(const Duration(minutes: 1));
+    final now = DateTime.now();
+    // If already past 45 seconds into the minute, schedule 2 minutes ahead so Android Clock
+    // does not misinterpret the time as past and schedule for tomorrow (24 hours later).
+    final targetTime = scheduledTime ??
+        (now.second >= 45
+            ? now.add(const Duration(minutes: 2))
+            : now.add(const Duration(minutes: 1)));
 
     if (kIsWeb) {
       debugPrint('[AlarmDispatchService] Web platform: System alarm intent skipped for $locationName.');

@@ -18,9 +18,13 @@ class AlarmInfo {
   });
 
   AlarmEntity toEntity() {
+    final serializedLocation = leadDistanceKm != 10.0
+        ? "$location###${leadDistanceKm.toStringAsFixed(1)}"
+        : location;
+
     return AlarmEntity()
       ..alarmId = id
-      ..location = location
+      ..location = serializedLocation
       ..latitude = latitude
       ..longitude = longitude
       ..isActive = isActive
@@ -28,12 +32,21 @@ class AlarmInfo {
   }
 
   factory AlarmInfo.fromEntity(AlarmEntity entity) {
+    String loc = entity.location;
+    double lead = 10.0;
+    if (loc.contains('###')) {
+      final parts = loc.split('###');
+      loc = parts[0];
+      lead = double.tryParse(parts[1]) ?? 10.0;
+    }
+
     return AlarmInfo(
       id: entity.alarmId,
-      location: entity.location,
+      location: loc,
       latitude: entity.latitude,
       longitude: entity.longitude,
       isActive: entity.isActive,
+      leadDistanceKm: lead,
     );
   }
 
