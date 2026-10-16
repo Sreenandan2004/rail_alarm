@@ -1,0 +1,962 @@
+[
+  {
+    "code": "NDLS",
+    "name": "New Delhi",
+    "lat": 28.6424,
+    "lng": 77.2205
+  },
+  {
+    "code": "DLI",
+    "name": "Old Delhi Junction",
+    "lat": 28.6608,
+    "lng": 77.2289
+  },
+  {
+    "code": "NZM",
+    "name": "Hazrat Nizamuddin",
+    "lat": 28.5888,
+    "lng": 77.2536
+  },
+  {
+    "code": "ANVT",
+    "name": "Anand Vihar Terminal",
+    "lat": 28.6503,
+    "lng": 77.3153
+  },
+  {
+    "code": "GZB",
+    "name": "Ghaziabad Junction",
+    "lat": 28.6534,
+    "lng": 77.4267
+  },
+  {
+    "code": "UMB",
+    "name": "Ambala Cantt Junction",
+    "lat": 30.3479,
+    "lng": 76.8378
+  },
+  {
+    "code": "CDG",
+    "name": "Chandigarh",
+    "lat": 30.7028,
+    "lng": 76.8227
+  },
+  {
+    "code": "KLK",
+    "name": "Kalka",
+    "lat": 30.8356,
+    "lng": 76.9352
+  },
+  {
+    "code": "LDH",
+    "name": "Ludhiana Junction",
+    "lat": 30.9037,
+    "lng": 75.8617
+  },
+  {
+    "code": "JUC",
+    "name": "Jalandhar City",
+    "lat": 31.3256,
+    "lng": 75.5792
+  },
+  {
+    "code": "ASR",
+    "name": "Amritsar Junction",
+    "lat": 31.634,
+    "lng": 74.8723
+  },
+  {
+    "code": "JAT",
+    "name": "Jammu Tawi",
+    "lat": 32.7056,
+    "lng": 74.88
+  },
+  {
+    "code": "UHP",
+    "name": "Udhampur",
+    "lat": 32.9238,
+    "lng": 75.1432
+  },
+  {
+    "code": "SVDK",
+    "name": "Shri Mata Vaishno Devi Katra",
+    "lat": 32.9839,
+    "lng": 74.9312
+  },
+  {
+    "code": "HW",
+    "name": "Haridwar",
+    "lat": 29.9457,
+    "lng": 78.1506
+  },
+  {
+    "code": "DDN",
+    "name": "Dehradun",
+    "lat": 30.3165,
+    "lng": 78.0322
+  },
+  {
+    "code": "MB",
+    "name": "Moradabad Junction",
+    "lat": 28.8258,
+    "lng": 78.777
+  },
+  {
+    "code": "BE",
+    "name": "Bareilly Junction",
+    "lat": 28.3377,
+    "lng": 79.4206
+  },
+  {
+    "code": "CNB",
+    "name": "Kanpur Central",
+    "lat": 26.4547,
+    "lng": 80.3507
+  },
+  {
+    "code": "LKO",
+    "name": "Lucknow Charbagh",
+    "lat": 26.8322,
+    "lng": 80.9221
+  },
+  {
+    "code": "LJN",
+    "name": "Lucknow Junction NER",
+    "lat": 26.8318,
+    "lng": 80.9216
+  },
+  {
+    "code": "PRYJ",
+    "name": "Prayagraj Junction",
+    "lat": 25.4484,
+    "lng": 81.8262
+  },
+  {
+    "code": "DDU",
+    "name": "Pt. Deen Dayal Upadhyaya Junction",
+    "lat": 25.2818,
+    "lng": 83.1189
+  },
+  {
+    "code": "BSB",
+    "name": "Varanasi Junction",
+    "lat": 25.3267,
+    "lng": 82.9879
+  },
+  {
+    "code": "GKP",
+    "name": "Gorakhpur Junction",
+    "lat": 26.7588,
+    "lng": 83.3828
+  },
+  {
+    "code": "AGC",
+    "name": "Agra Cantt",
+    "lat": 27.1592,
+    "lng": 77.9944
+  },
+  {
+    "code": "AF",
+    "name": "Agra Fort",
+    "lat": 27.1824,
+    "lng": 78.0163
+  },
+  {
+    "code": "MTJ",
+    "name": "Mathura Junction",
+    "lat": 27.4924,
+    "lng": 77.6737
+  },
+  {
+    "code": "JHS",
+    "name": "Virangana Lakshmibai Jhansi",
+    "lat": 25.4484,
+    "lng": 78.5685
+  },
+  {
+    "code": "ALJN",
+    "name": "Aligarh Junction",
+    "lat": 27.8974,
+    "lng": 78.088
+  },
+  {
+    "code": "PNBE",
+    "name": "Patna Junction",
+    "lat": 25.6022,
+    "lng": 85.1376
+  },
+  {
+    "code": "DNR",
+    "name": "Danapur",
+    "lat": 25.6268,
+    "lng": 85.0441
+  },
+  {
+    "code": "PPTA",
+    "name": "Patliputra Junction",
+    "lat": 25.6421,
+    "lng": 85.0934
+  },
+  {
+    "code": "GAYA",
+    "name": "Gaya Junction",
+    "lat": 24.7955,
+    "lng": 85.0002
+  },
+  {
+    "code": "MFP",
+    "name": "Muzaffarpur Junction",
+    "lat": 26.1209,
+    "lng": 85.3906
+  },
+  {
+    "code": "BJU",
+    "name": "Barauni Junction",
+    "lat": 25.4746,
+    "lng": 85.9793
+  },
+  {
+    "code": "KGG",
+    "name": "Khagaria Junction",
+    "lat": 25.5034,
+    "lng": 86.4718
+  },
+  {
+    "code": "KIR",
+    "name": "Katihar Junction",
+    "lat": 25.5392,
+    "lng": 87.5702
+  },
+  {
+    "code": "DBG",
+    "name": "Darbhanga Junction",
+    "lat": 26.1542,
+    "lng": 85.8918
+  },
+  {
+    "code": "RXL",
+    "name": "Raxaul Junction",
+    "lat": 26.9774,
+    "lng": 84.8512
+  },
+  {
+    "code": "BGP",
+    "name": "Bhagalpur Junction",
+    "lat": 25.2425,
+    "lng": 86.9842
+  },
+  {
+    "code": "HWH",
+    "name": "Howrah Junction",
+    "lat": 22.5839,
+    "lng": 88.3426
+  },
+  {
+    "code": "SDAH",
+    "name": "Sealdah",
+    "lat": 22.5697,
+    "lng": 88.3713
+  },
+  {
+    "code": "KOAA",
+    "name": "Kolkata Chitpur",
+    "lat": 22.6026,
+    "lng": 88.3734
+  },
+  {
+    "code": "SHM",
+    "name": "Shalimar",
+    "lat": 22.5539,
+    "lng": 88.3094
+  },
+  {
+    "code": "KGP",
+    "name": "Kharagpur Junction",
+    "lat": 22.3385,
+    "lng": 87.3242
+  },
+  {
+    "code": "ASN",
+    "name": "Asansol Junction",
+    "lat": 23.6871,
+    "lng": 86.9746
+  },
+  {
+    "code": "BWN",
+    "name": "Barddhaman Junction",
+    "lat": 23.2384,
+    "lng": 87.8687
+  },
+  {
+    "code": "MLDT",
+    "name": "Malda Town",
+    "lat": 25.0116,
+    "lng": 88.1362
+  },
+  {
+    "code": "NJP",
+    "name": "New Jalpaiguri Junction",
+    "lat": 26.6853,
+    "lng": 88.4419
+  },
+  {
+    "code": "GHY",
+    "name": "Guwahati",
+    "lat": 26.1824,
+    "lng": 91.7516
+  },
+  {
+    "code": "KYQ",
+    "name": "Kamakhya Junction",
+    "lat": 26.1554,
+    "lng": 91.7058
+  },
+  {
+    "code": "NBQ",
+    "name": "New Bongaigaon Junction",
+    "lat": 26.505,
+    "lng": 90.5408
+  },
+  {
+    "code": "RNY",
+    "name": "Rangiya Junction",
+    "lat": 26.4674,
+    "lng": 91.6252
+  },
+  {
+    "code": "LMG",
+    "name": "Lumding Junction",
+    "lat": 25.7533,
+    "lng": 93.1706
+  },
+  {
+    "code": "DBRG",
+    "name": "Dibrugarh",
+    "lat": 27.4728,
+    "lng": 94.912
+  },
+  {
+    "code": "DMV",
+    "name": "Dimapur",
+    "lat": 25.908,
+    "lng": 93.7275
+  },
+  {
+    "code": "AGTL",
+    "name": "Agartala",
+    "lat": 23.7915,
+    "lng": 91.2721
+  },
+  {
+    "code": "DHN",
+    "name": "Dhanbad Junction",
+    "lat": 23.7957,
+    "lng": 86.4304
+  },
+  {
+    "code": "RNC",
+    "name": "Ranchi Junction",
+    "lat": 23.3514,
+    "lng": 85.3344
+  },
+  {
+    "code": "HTE",
+    "name": "Hatia",
+    "lat": 23.3148,
+    "lng": 85.3138
+  },
+  {
+    "code": "TATA",
+    "name": "Tatanagar Junction",
+    "lat": 22.7667,
+    "lng": 86.2008
+  },
+  {
+    "code": "BKSC",
+    "name": "Bokaro Steel City",
+    "lat": 23.6393,
+    "lng": 86.177
+  },
+  {
+    "code": "BBS",
+    "name": "Bhubaneswar",
+    "lat": 20.2668,
+    "lng": 85.8436
+  },
+  {
+    "code": "CTC",
+    "name": "Cuttack Junction",
+    "lat": 20.4632,
+    "lng": 85.8929
+  },
+  {
+    "code": "PURI",
+    "name": "Puri",
+    "lat": 19.8135,
+    "lng": 85.8312
+  },
+  {
+    "code": "BAM",
+    "name": "Brahmapur",
+    "lat": 19.3149,
+    "lng": 84.7941
+  },
+  {
+    "code": "ROU",
+    "name": "Rourkela Junction",
+    "lat": 22.2253,
+    "lng": 84.8623
+  },
+  {
+    "code": "SBP",
+    "name": "Sambalpur Junction",
+    "lat": 21.4669,
+    "lng": 83.9812
+  },
+  {
+    "code": "BLS",
+    "name": "Balasore",
+    "lat": 21.4934,
+    "lng": 86.9332
+  },
+  {
+    "code": "CSMT",
+    "name": "Chhatrapati Shivaji Maharaj Terminus",
+    "lat": 18.9402,
+    "lng": 72.8358
+  },
+  {
+    "code": "MMCT",
+    "name": "Mumbai Central",
+    "lat": 18.9696,
+    "lng": 72.8194
+  },
+  {
+    "code": "BDTS",
+    "name": "Bandra Terminus",
+    "lat": 19.0622,
+    "lng": 72.8427
+  },
+  {
+    "code": "LTT",
+    "name": "Lokmanya Tilak Terminus",
+    "lat": 19.0699,
+    "lng": 72.8913
+  },
+  {
+    "code": "DR",
+    "name": "Dadar Central",
+    "lat": 19.018,
+    "lng": 72.8432
+  },
+  {
+    "code": "TNA",
+    "name": "Thane",
+    "lat": 19.186,
+    "lng": 72.9759
+  },
+  {
+    "code": "KYN",
+    "name": "Kalyan Junction",
+    "lat": 19.2364,
+    "lng": 73.1306
+  },
+  {
+    "code": "PUNE",
+    "name": "Pune Junction",
+    "lat": 18.5284,
+    "lng": 73.8743
+  },
+  {
+    "code": "SUR",
+    "name": "Solapur",
+    "lat": 17.6599,
+    "lng": 75.9064
+  },
+  {
+    "code": "KOP",
+    "name": "Kolhapur CSMT",
+    "lat": 16.7028,
+    "lng": 74.2405
+  },
+  {
+    "code": "NK",
+    "name": "Nashik Road",
+    "lat": 19.9542,
+    "lng": 73.8373
+  },
+  {
+    "code": "MMR",
+    "name": "Manmad Junction",
+    "lat": 20.252,
+    "lng": 74.4373
+  },
+  {
+    "code": "BSL",
+    "name": "Bhusaval Junction",
+    "lat": 21.0478,
+    "lng": 75.7953
+  },
+  {
+    "code": "NGP",
+    "name": "Nagpur Junction",
+    "lat": 21.1524,
+    "lng": 79.0888
+  },
+  {
+    "code": "BPQ",
+    "name": "Balharshah Junction",
+    "lat": 19.8517,
+    "lng": 79.3516
+  },
+  {
+    "code": "ADI",
+    "name": "Ahmedabad Junction",
+    "lat": 23.0238,
+    "lng": 72.6011
+  },
+  {
+    "code": "BRC",
+    "name": "Vadodara Junction",
+    "lat": 22.3107,
+    "lng": 73.1812
+  },
+  {
+    "code": "ST",
+    "name": "Surat",
+    "lat": 21.2052,
+    "lng": 72.8407
+  },
+  {
+    "code": "RTM",
+    "name": "Ratlam Junction",
+    "lat": 23.3364,
+    "lng": 75.0425
+  },
+  {
+    "code": "RJT",
+    "name": "Rajkot Junction",
+    "lat": 22.3117,
+    "lng": 70.8022
+  },
+  {
+    "code": "BVC",
+    "name": "Bhavnagar Terminus",
+    "lat": 21.7745,
+    "lng": 72.1384
+  },
+  {
+    "code": "JAM",
+    "name": "Jamnagar",
+    "lat": 22.4707,
+    "lng": 70.0577
+  },
+  {
+    "code": "BHUJ",
+    "name": "Bhuj",
+    "lat": 23.2533,
+    "lng": 69.6693
+  },
+  {
+    "code": "BPL",
+    "name": "Bhopal Junction",
+    "lat": 23.2662,
+    "lng": 77.4126
+  },
+  {
+    "code": "RKMP",
+    "name": "Rani Kamalapati",
+    "lat": 23.2163,
+    "lng": 77.4398
+  },
+  {
+    "code": "INDB",
+    "name": "Indore Junction",
+    "lat": 22.7177,
+    "lng": 75.8682
+  },
+  {
+    "code": "UJN",
+    "name": "Ujjain Junction",
+    "lat": 23.1815,
+    "lng": 75.782
+  },
+  {
+    "code": "JBP",
+    "name": "Jabalpur",
+    "lat": 23.161,
+    "lng": 79.9575
+  },
+  {
+    "code": "GWL",
+    "name": "Gwalior Junction",
+    "lat": 26.2167,
+    "lng": 78.1873
+  },
+  {
+    "code": "ET",
+    "name": "Itarsi Junction",
+    "lat": 22.6133,
+    "lng": 77.7661
+  },
+  {
+    "code": "KOTA",
+    "name": "Kota Junction",
+    "lat": 25.2138,
+    "lng": 75.8648
+  },
+  {
+    "code": "JP",
+    "name": "Jaipur Junction",
+    "lat": 26.9196,
+    "lng": 75.7878
+  },
+  {
+    "code": "AII",
+    "name": "Ajmer Junction",
+    "lat": 26.4561,
+    "lng": 74.6399
+  },
+  {
+    "code": "JU",
+    "name": "Jodhpur Junction",
+    "lat": 26.2847,
+    "lng": 73.0234
+  },
+  {
+    "code": "BKN",
+    "name": "Bikaner Junction",
+    "lat": 28.0167,
+    "lng": 73.3119
+  },
+  {
+    "code": "UDZ",
+    "name": "Udaipur City",
+    "lat": 24.5714,
+    "lng": 73.6983
+  },
+  {
+    "code": "ABR",
+    "name": "Abu Road",
+    "lat": 24.4789,
+    "lng": 72.7797
+  },
+  {
+    "code": "JSM",
+    "name": "Jaisalmer",
+    "lat": 26.9077,
+    "lng": 70.9238
+  },
+  {
+    "code": "SBC",
+    "name": "KSR Bengaluru City",
+    "lat": 12.9784,
+    "lng": 77.5694
+  },
+  {
+    "code": "YPR",
+    "name": "Yesvantpur Junction",
+    "lat": 13.0238,
+    "lng": 77.5503
+  },
+  {
+    "code": "SMVB",
+    "name": "Sir M. Visvesvaraya Terminal Bengaluru",
+    "lat": 13.0031,
+    "lng": 77.6534
+  },
+  {
+    "code": "BNC",
+    "name": "Bengaluru Cantt",
+    "lat": 12.9937,
+    "lng": 77.5985
+  },
+  {
+    "code": "MYS",
+    "name": "Mysuru Junction",
+    "lat": 12.3164,
+    "lng": 76.645
+  },
+  {
+    "code": "UBL",
+    "name": "SSS Hubballi Junction",
+    "lat": 15.3444,
+    "lng": 75.1489
+  },
+  {
+    "code": "BGM",
+    "name": "Belagavi",
+    "lat": 15.8497,
+    "lng": 74.5089
+  },
+  {
+    "code": "MAQ",
+    "name": "Mangaluru Central",
+    "lat": 12.8628,
+    "lng": 74.8427
+  },
+  {
+    "code": "MAJN",
+    "name": "Mangaluru Junction",
+    "lat": 12.8698,
+    "lng": 74.8762
+  },
+  {
+    "code": "BAY",
+    "name": "Ballari Junction",
+    "lat": 15.1432,
+    "lng": 76.9248
+  },
+  {
+    "code": "SC",
+    "name": "Secunderabad Junction",
+    "lat": 17.4339,
+    "lng": 78.5042
+  },
+  {
+    "code": "HYB",
+    "name": "Hyderabad Deccan Nampally",
+    "lat": 17.3924,
+    "lng": 78.4682
+  },
+  {
+    "code": "KCG",
+    "name": "Kacheguda",
+    "lat": 17.3879,
+    "lng": 78.4975
+  },
+  {
+    "code": "KZJ",
+    "name": "Kazipet Junction",
+    "lat": 17.9785,
+    "lng": 79.5222
+  },
+  {
+    "code": "WL",
+    "name": "Warangal",
+    "lat": 17.9689,
+    "lng": 79.6015
+  },
+  {
+    "code": "BZA",
+    "name": "Vijayawada Junction",
+    "lat": 16.5186,
+    "lng": 80.6198
+  },
+  {
+    "code": "GNT",
+    "name": "Guntur Junction",
+    "lat": 16.2974,
+    "lng": 80.4439
+  },
+  {
+    "code": "VSKP",
+    "name": "Visakhapatnam Junction",
+    "lat": 17.7215,
+    "lng": 83.2876
+  },
+  {
+    "code": "TPTY",
+    "name": "Tirupati",
+    "lat": 13.6288,
+    "lng": 79.4192
+  },
+  {
+    "code": "RU",
+    "name": "Renigunta Junction",
+    "lat": 13.6492,
+    "lng": 79.5161
+  },
+  {
+    "code": "MAS",
+    "name": "Puratchi Thalaivar Dr. M.G. Ramachandran Central",
+    "lat": 13.0827,
+    "lng": 80.2755
+  },
+  {
+    "code": "MS",
+    "name": "Chennai Egmore",
+    "lat": 13.0784,
+    "lng": 80.2612
+  },
+  {
+    "code": "TBM",
+    "name": "Tambaram",
+    "lat": 12.9249,
+    "lng": 80.1284
+  },
+  {
+    "code": "CBE",
+    "name": "Coimbatore Junction",
+    "lat": 11.0016,
+    "lng": 76.9665
+  },
+  {
+    "code": "MDU",
+    "name": "Madurai Junction",
+    "lat": 9.9197,
+    "lng": 78.1118
+  },
+  {
+    "code": "TPJ",
+    "name": "Tiruchchirappalli Junction",
+    "lat": 10.7936,
+    "lng": 78.6844
+  },
+  {
+    "code": "SA",
+    "name": "Salem Junction",
+    "lat": 11.6664,
+    "lng": 78.1217
+  },
+  {
+    "code": "ED",
+    "name": "Erode Junction",
+    "lat": 11.341,
+    "lng": 77.7172
+  },
+  {
+    "code": "TEN",
+    "name": "Tirunelveli Junction",
+    "lat": 8.7303,
+    "lng": 77.7081
+  },
+  {
+    "code": "CAPE",
+    "name": "Kanniyakumari",
+    "lat": 8.0883,
+    "lng": 77.5385
+  },
+  {
+    "code": "RMM",
+    "name": "Rameswaram",
+    "lat": 9.2881,
+    "lng": 79.3129
+  },
+  {
+    "code": "TVC",
+    "name": "Thiruvananthapuram Central",
+    "lat": 8.4871,
+    "lng": 76.9532
+  },
+  {
+    "code": "KCVL",
+    "name": "Kochuveli",
+    "lat": 8.5085,
+    "lng": 76.9015
+  },
+  {
+    "code": "QLN",
+    "name": "Kollam Junction",
+    "lat": 8.8843,
+    "lng": 76.5956
+  },
+  {
+    "code": "KYJ",
+    "name": "Kayamkulam Junction",
+    "lat": 9.1724,
+    "lng": 76.5005
+  },
+  {
+    "code": "ALLP",
+    "name": "Alappuzha",
+    "lat": 9.489,
+    "lng": 76.3268
+  },
+  {
+    "code": "KTYM",
+    "name": "Kottayam",
+    "lat": 9.5916,
+    "lng": 76.5222
+  },
+  {
+    "code": "ERS",
+    "name": "Ernakulam Junction South",
+    "lat": 9.9678,
+    "lng": 76.2894
+  },
+  {
+    "code": "ERN",
+    "name": "Ernakulam Town North",
+    "lat": 9.9934,
+    "lng": 76.2891
+  },
+  {
+    "code": "AWY",
+    "name": "Aluva",
+    "lat": 10.1076,
+    "lng": 76.3533
+  },
+  {
+    "code": "TCR",
+    "name": "Thrissur",
+    "lat": 10.516,
+    "lng": 76.2088
+  },
+  {
+    "code": "SRR",
+    "name": "Shoranur Junction",
+    "lat": 10.7618,
+    "lng": 76.2758
+  },
+  {
+    "code": "PGT",
+    "name": "Palakkad Junction",
+    "lat": 10.8286,
+    "lng": 76.6548
+  },
+  {
+    "code": "CLT",
+    "name": "Kozhikode Main",
+    "lat": 11.2467,
+    "lng": 75.7804
+  },
+  {
+    "code": "CAN",
+    "name": "Kannur Main",
+    "lat": 11.8745,
+    "lng": 75.3704
+  },
+  {
+    "code": "KGQ",
+    "name": "Kasaragod",
+    "lat": 12.4996,
+    "lng": 74.9869
+  },
+  {
+    "code": "R",
+    "name": "Raipur Junction",
+    "lat": 21.2514,
+    "lng": 81.6296
+  },
+  {
+    "code": "BSP",
+    "name": "Bilaspur Junction",
+    "lat": 22.0797,
+    "lng": 82.1409
+  },
+  {
+    "code": "DURG",
+    "name": "Durg Junction",
+    "lat": 21.1904,
+    "lng": 81.2849
+  },
+  {
+    "code": "MAO",
+    "name": "Madgaon Junction",
+    "lat": 15.2736,
+    "lng": 73.9786
+  },
+  {
+    "code": "KRMI",
+    "name": "Karmali",
+    "lat": 15.4897,
+    "lng": 73.9189
+  },
+  {
+    "code": "THVM",
+    "name": "Thivim",
+    "lat": 15.6171,
+    "lng": 73.8647
+  }
+]
