@@ -28,17 +28,15 @@ RailAlarm is an offline-first, battery-efficient, location-triggered wake-up com
 
 ---
 
-## Target Development Phases
-
-### Phase 3: Native System Alarm & Arrival Dispatch Engine ⏰
-* **Architectural Rationale**: Delegating to the device's native system alarm clock ensures 100% fail-safe reliability against OEM background task killers, allows users to wake up to their familiar ringtones, and keeps the user experience simple.
-* **Key Deliverables**:
-  1. **Dedicated AlarmDispatchService**: Native Android `SET_ALARM` intent handler with structured parameters (`EXTRA_MESSAGE`, `EXTRA_HOUR`, `EXTRA_MINUTES`, `EXTRA_SKIP_UI`, `EXTRA_VIBRATE`).
-  2. **Instant "Test System Alarm" Trigger**: Quick-action test button on each alarm card for travelers to test that their phone's clock app responds.
-  3. **Multi-Platform Fallback Feedback**: Graceful in-app arrival confirmation banner for web, desktop, and non-Android devices.
-  4. **Arrival Banner / Status HUD**: Frosted-glass arrival feedback inside the app when destination is reached.
+### Phase 3: Native System Alarm & Arrival Dispatch Engine ✅
+- **Dedicated AlarmDispatchService**: Native Android `SET_ALARM` intent handler with structured parameters (`EXTRA_MESSAGE`, `EXTRA_HOUR`, `EXTRA_MINUTES`, `EXTRA_SKIP_UI`, `EXTRA_VIBRATE`).
+- **Instant "Test System Alarm" Trigger**: Quick-action test button on each alarm card for travelers to test their phone's clock response anytime.
+- **Glassmorphic Arrival Dialog**: Brand-aligned frosted-glass arrival modal displaying location name and arrival notice.
+- **Unit Test Coverage**: Unit tests covering native alarm dispatch and test triggers.
 
 ---
+
+## Target Development Phases
 
 ### Phase 4: Background Resilience & Persistent Trip Status 🛡️
 * **Objective**: Keep tracking alive when the phone screen is off and modern Android OS enters deep sleep (Doze Mode).

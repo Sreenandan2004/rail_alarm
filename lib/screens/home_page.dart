@@ -1,16 +1,14 @@
 import 'dart:async';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:android_intent_plus/android_intent.dart';
-import 'package:android_intent_plus/flag.dart';
 import '../models/alarm_info.dart';
 import '../models/station.dart';
 import '../models/tracking_state.dart';
 import '../services/adaptive_location_service.dart';
+import '../services/alarm_dispatch_service.dart';
 import '../services/isar_service.dart';
 import '../services/station_service.dart';
 import 'alarm_page.dart';
@@ -165,41 +163,111 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _setSystemAlarm(String message, int hour, int minute) {
-    if (kIsWeb) return;
-    final intent = AndroidIntent(
-      action: 'android.intent.action.SET_ALARM',
-      arguments: <String, dynamic>{
-        'android.intent.extra.alarm.MESSAGE': message,
-        'android.intent.extra.alarm.HOUR': hour,
-        'android.intent.extra.alarm.MINUTES': minute,
-        'android.intent.extra.alarm.SKIP_UI': true,
-      },
-      flags: <int>[Flag.FLAG_ACTIVITY_NEW_TASK],
-    );
-    intent.launch();
-  }
-
   Future<void> _triggerAlarm(AlarmInfo alarm) async {
-    final scheduledTime = DateTime.now().add(const Duration(minutes: 1));
-
-    _setSystemAlarm(
-      "Arriving at ${alarm.location}!",
-      scheduledTime.hour,
-      scheduledTime.minute,
+    final success = await AlarmDispatchService.dispatchSystemAlarm(
+      locationName: alarm.location,
     );
 
     await _isarService.toggleAlarmActive(alarm.id, false);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("✅ Arriving at ${alarm.location}! Alarm scheduled for 1 minute from now."),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      _showArrivalDialog(alarm, success);
     }
+  }
+
+  void _showArrivalDialog(AlarmInfo alarm, bool intentLaunched) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Dialog(
+            backgroundColor: Colors.black.withValues(alpha: 0.85),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28),
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(28.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "RailAlarm",
+                    style: GoogleFonts.urbanist(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w100,
+                      color: Colors.white,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(color: Colors.white24, thickness: 1),
+                  const SizedBox(height: 20),
+                  Text(
+                    "YOU HAVE ARRIVED NEAR",
+                    style: GoogleFonts.victorMono(
+                      color: Colors.greenAccent,
+                      fontSize: 13,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    alarm.location,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.urbanist(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    intentLaunched
+                        ? "Your phone's native alarm has been scheduled to wake you up!"
+                        : "You are within ${alarm.leadDistanceKm.toStringAsFixed(0)} km of your destination.",
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.victorMono(
+                      color: Colors.white70,
+                      fontSize: 12,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  GestureDetector(
+                    onTap: () => Navigator.of(dialogContext).pop(),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        "DISMISS",
+                        style: GoogleFonts.urbanist(
+                          color: Colors.black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _addStationAlarm(Station station) async {

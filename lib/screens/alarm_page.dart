@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/alarm_info.dart';
 import '../models/tracking_state.dart';
 import '../services/adaptive_location_service.dart';
+import '../services/alarm_dispatch_service.dart';
 import '../utils/geo_utils.dart';
 
 class AlarmPage extends StatelessWidget {
@@ -227,6 +228,20 @@ class AlarmPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                ),
+                IconButton(
+                  onPressed: () async {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("🔔 Testing native alarm for '${alarm.location}'..."),
+                        backgroundColor: Colors.white.withValues(alpha: 0.2),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    await AlarmDispatchService.testSystemAlarm(locationName: alarm.location);
+                  },
+                  icon: const Icon(Icons.alarm_on, color: Colors.greenAccent),
+                  tooltip: "Test Native Alarm",
                 ),
                 IconButton(
                   onPressed: () {
