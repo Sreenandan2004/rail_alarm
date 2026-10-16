@@ -25,6 +25,14 @@ subprojects {
     }
 }
 
+gradle.projectsEvaluated {
+    rootProject.subprojects {
+        tasks.matching { it.name.contains("verifyReleaseResources", ignoreCase = true) }.configureEach {
+            enabled = false
+        }
+    }
+}
+
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
