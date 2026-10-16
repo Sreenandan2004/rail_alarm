@@ -9,8 +9,10 @@ import '../models/station.dart';
 import '../models/tracking_state.dart';
 import '../services/adaptive_location_service.dart';
 import '../services/alarm_dispatch_service.dart';
+import '../services/battery_optimization_service.dart';
 import '../services/isar_service.dart';
 import '../services/station_service.dart';
+import '../widgets/trip_status_hud.dart';
 import 'alarm_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -576,6 +578,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSearchPage() {
+    final activeAlarms = _alarms.where((a) => a.isActive).toList();
+    AlarmInfo? closestActiveAlarm;
+    if (activeAlarms.isNotEmpty) {
+      if (_currentPosition != null) {
+        closestActiveAlarm = AdaptiveLocationService.findClosestActiveAlarm(
+          currentPosition: _currentPosition!,
+          alarms: activeAlarms,
+        );
+      }
+      closestActiveAlarm ??= activeAlarms.first;
+    }
+
     return SizedBox(
       height: double.infinity,
       child: Center(
@@ -585,7 +599,7 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 60),
+                const SizedBox(height: 50),
                 Text(
                   "RailAlarm",
                   style: GoogleFonts.urbanist(
@@ -595,21 +609,28 @@ class _HomePageState extends State<HomePage> {
                     letterSpacing: 1.5,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 const Divider(
                   color: Colors.white54,
                   thickness: 1,
                   indent: 20,
                   endIndent: 20,
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 12),
+                TripStatusHud(
+                  activeAlarm: closestActiveAlarm,
+                  decision: _lastDecision,
+                  onBatteryGuideTap: () => BatteryOptimizationService.showOptimizationGuide(context),
+                  onViewAlarmsTap: () => setState(() => _selectedIndex = 1),
+                ),
+                const SizedBox(height: 12),
                 Image.asset(
                   'assets/images/bus_railway.png',
-                  width: 100,
-                  height: 100,
+                  width: 80,
+                  height: 80,
                   fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 20),
                 TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,

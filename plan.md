@@ -36,16 +36,15 @@ RailAlarm is an offline-first, battery-efficient, location-triggered wake-up com
 
 ---
 
-## Target Development Phases
-
-### Phase 4: Background Resilience & Persistent Trip Status 🛡️
-* **Objective**: Keep tracking alive when the phone screen is off and modern Android OS enters deep sleep (Doze Mode).
-* **Key Deliverables**:
-  1. **Native Permissions Audit**: Configure Android permissions (`SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `WAKE_LOCK`, `FOREGROUND_SERVICE`, `ACCESS_BACKGROUND_LOCATION`).
-  2. **Live Trip Status HUD**: Persistent status card and notification displaying real-time distance and next check interval (*"34 km to Palakkad • Next check in 8 min"*).
-  3. **Battery Optimization Helper**: In-app prompt and guidance to whitelist RailAlarm from aggressive OEM battery savers (Xiaomi, Samsung, OnePlus).
+### Phase 4: Background Resilience & Persistent Trip Status ✅
+- **Native Permissions Audit**: Configured Android permissions in `AndroidManifest.xml` (`SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `WAKE_LOCK`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION`, `ACCESS_BACKGROUND_LOCATION`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `POST_NOTIFICATIONS`).
+- **Live Trip Status HUD**: Interactive frosted-glass live HUD displaying real-time distance, current speed, ETA, Safe Sleep interval, and trigger boundary.
+- **Battery Optimization Service & Doze Shield**: OEM guidance system and direct system settings intent dispatcher (`BatteryOptimizationService`) supporting Xiaomi, Samsung, OnePlus, Vivo, and Google Pixel.
+- **Unit & Widget Test Coverage**: Added comprehensive unit and widget tests in `test/unit/battery_optimization_service_test.dart` (27 total project tests passing).
 
 ---
+
+## Target Development Phases
 
 ### Phase 5: Release Readiness & Platform Polish 🚀
 * **Objective**: Production readiness, code cleanup, and distribution audit.

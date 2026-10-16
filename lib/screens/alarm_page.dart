@@ -6,6 +6,7 @@ import '../models/alarm_info.dart';
 import '../models/tracking_state.dart';
 import '../services/adaptive_location_service.dart';
 import '../services/alarm_dispatch_service.dart';
+import '../services/battery_optimization_service.dart';
 import '../utils/geo_utils.dart';
 
 class AlarmPage extends StatelessWidget {
@@ -51,20 +52,50 @@ class AlarmPage extends StatelessWidget {
               endIndent: 20,
             ),
             if (alarms.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              Text(
-                "ALL ALARMS",
-                style: GoogleFonts.victorMono(
-                  fontSize: 24,
-                  letterSpacing: 2.0,
-                  color: Colors.white,
-                ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "ALL ALARMS",
+                    style: GoogleFonts.victorMono(
+                      fontSize: 22,
+                      letterSpacing: 2.0,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  GestureDetector(
+                    onTap: () => BatteryOptimizationService.showOptimizationGuide(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.shield_outlined, size: 14, color: Colors.greenAccent),
+                          const SizedBox(width: 4),
+                          Text(
+                            "Doze Shield",
+                            style: GoogleFonts.victorMono(
+                              fontSize: 10,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
             ],
             Expanded(
               child: alarms.isEmpty
-                  ? _buildEmptyState()
+                  ? _buildEmptyState(context)
                   : ListView.builder(
                       padding: EdgeInsets.zero,
                       itemCount: alarms.length,
@@ -90,12 +121,43 @@ class AlarmPage extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Text(
-        "No active alarms.\nEnter a location to add one!",
-        textAlign: TextAlign.center,
-        style: GoogleFonts.urbanist(color: Colors.white70, fontSize: 18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "No active alarms.\nEnter a location to add one!",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.urbanist(color: Colors.white70, fontSize: 18),
+          ),
+          const SizedBox(height: 20),
+          GestureDetector(
+            onTap: () => BatteryOptimizationService.showOptimizationGuide(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.shield_outlined, size: 16, color: Colors.greenAccent),
+                  const SizedBox(width: 6),
+                  Text(
+                    "Battery Optimization Tips",
+                    style: GoogleFonts.victorMono(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
