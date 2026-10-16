@@ -6,6 +6,7 @@ class AlarmInfo {
   final double latitude;
   final double longitude;
   final bool isActive;
+  final double leadDistanceKm;
 
   AlarmInfo({
     required this.id,
@@ -13,6 +14,7 @@ class AlarmInfo {
     required this.latitude,
     required this.longitude,
     this.isActive = true,
+    this.leadDistanceKm = 10.0,
   });
 
   AlarmEntity toEntity() {
@@ -41,6 +43,7 @@ class AlarmInfo {
     double? latitude,
     double? longitude,
     bool? isActive,
+    double? leadDistanceKm,
   }) {
     return AlarmInfo(
       id: id ?? this.id,
@@ -48,6 +51,7 @@ class AlarmInfo {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       isActive: isActive ?? this.isActive,
+      leadDistanceKm: leadDistanceKm ?? this.leadDistanceKm,
     );
   }
 }
