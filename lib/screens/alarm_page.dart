@@ -6,11 +6,13 @@ import '../models/alarm_info.dart';
 class AlarmPage extends StatelessWidget {
   final List<AlarmInfo> alarms;
   final Function(String) onDelete;
+  final Function(String, bool)? onToggle;
 
   const AlarmPage({
     super.key, 
     required this.alarms, 
-    required this.onDelete
+    required this.onDelete,
+    this.onToggle,
   });
 
   @override
@@ -38,7 +40,7 @@ class AlarmPage extends StatelessWidget {
               endIndent: 20,
             ),
             if (alarms.isNotEmpty) ...[
-              const SizedBox(height: 60),
+              const SizedBox(height: 40),
               Text(
                 "ALL ALARMS",
                 style: GoogleFonts.victorMono(
@@ -47,7 +49,7 @@ class AlarmPage extends StatelessWidget {
                   color: Colors.white,
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
             ],
             Expanded(
               child: alarms.isEmpty
@@ -70,7 +72,7 @@ class AlarmPage extends StatelessWidget {
   Widget _buildEmptyState() {
     return Center(
       child: Text(
-        "No active alarms.\nSearch a location to add one!",
+        "No active alarms.\nSearch a station to add one!",
         textAlign: TextAlign.center,
         style: GoogleFonts.urbanist(color: Colors.white, fontSize: 20),
       ),
@@ -79,17 +81,19 @@ class AlarmPage extends StatelessWidget {
 
   Widget _buildGlassCard(BuildContext context, AlarmInfo alarm) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       height: 80,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: alarm.isActive ? Colors.white.withValues(alpha: 0.15) : Colors.red.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(32),
+              color: alarm.isActive
+                  ? Colors.white.withValues(alpha: 0.15)
+                  : Colors.red.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.2),
               ),
@@ -97,13 +101,40 @@ class AlarmPage extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  alarm.location,
-                  style: GoogleFonts.urbanist(
-                    fontSize: 22,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                    decoration: alarm.isActive ? TextDecoration.none : TextDecoration.lineThrough,
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      if (onToggle != null) {
+                        onToggle!(alarm.id, !alarm.isActive);
+                      }
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          alarm.location,
+                          style: GoogleFonts.urbanist(
+                            fontSize: 20,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            decoration: alarm.isActive
+                                ? TextDecoration.none
+                                : TextDecoration.lineThrough,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          alarm.isActive ? "Tracking Active (<10 km)" : "Alarm Inactive / Triggered",
+                          style: GoogleFonts.victorMono(
+                            fontSize: 12,
+                            color: alarm.isActive ? Colors.greenAccent : Colors.white60,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 IconButton(
@@ -111,7 +142,7 @@ class AlarmPage extends StatelessWidget {
                     onDelete(alarm.id);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text("Alarm deleted"),
+                        content: Text("Alarm for '${alarm.location}' deleted"),
                         behavior: SnackBarBehavior.floating,
                         margin: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
                         backgroundColor: Colors.white.withValues(alpha: 0.2),
@@ -120,6 +151,7 @@ class AlarmPage extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.delete_outline, color: Colors.white70),
+                  tooltip: "Delete Alarm",
                 ),
               ],
             ),

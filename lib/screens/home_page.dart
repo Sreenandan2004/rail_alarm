@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
@@ -7,6 +8,9 @@ import 'package:geolocator/geolocator.dart';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:android_intent_plus/flag.dart';
 import '../models/alarm_info.dart';
+import '../models/station.dart';
+import '../services/isar_service.dart';
+import '../services/station_service.dart';
 import 'alarm_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -19,20 +23,57 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
-  final List<AlarmInfo> _alarms = [];
+  final FocusNode _searchFocusNode = FocusNode();
+
+  List<AlarmInfo> _alarms = [];
+  List<Station> _suggestions = [];
+
+  final IsarService _isarService = IsarService();
+  final StationService _stationService = StationService();
+
   StreamSubscription<Position>? _positionStreamSubscription;
+  StreamSubscription<List<AlarmInfo>>? _alarmsSubscription;
 
   @override
   void initState() {
     super.initState();
+    _initServices();
     _startTracking();
+  }
+
+  Future<void> _initServices() async {
+    await _stationService.init();
+    _alarmsSubscription = _isarService.watchAlarms().listen((alarms) {
+      if (mounted) {
+        setState(() {
+          _alarms = alarms;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
+    _alarmsSubscription?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    if (query.trim().isEmpty) {
+      if (_suggestions.isNotEmpty) {
+        setState(() {
+          _suggestions = [];
+        });
+      }
+      return;
+    }
+    final results = _stationService.search(query, limit: 5);
+    setState(() {
+      _suggestions = results;
+    });
   }
 
   Future<Position> _determinePosition() async {
@@ -55,7 +96,7 @@ class _HomePageState extends State<HomePage> {
   void _startTracking() {
     final LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 100, 
+      distanceFilter: 100,
     );
 
     _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
@@ -76,8 +117,8 @@ class _HomePageState extends State<HomePage> {
       );
 
       double distanceInKm = distanceInMeters / 1000;
-      
-      if (distanceInKm < 10) { 
+
+      if (distanceInKm < 10) {
         _triggerAlarm(alarm);
       }
     }
@@ -97,43 +138,84 @@ class _HomePageState extends State<HomePage> {
     intent.launch();
   }
 
-  void _triggerAlarm(AlarmInfo alarm) {
+  Future<void> _triggerAlarm(AlarmInfo alarm) async {
     final scheduledTime = DateTime.now().add(const Duration(minutes: 1));
-    
+
     _setSystemAlarm(
       "Arriving at ${alarm.location}!",
       scheduledTime.hour,
       scheduledTime.minute,
     );
 
-    setState(() {
-      int index = _alarms.indexWhere((a) => a.id == alarm.id);
-      if (index != -1) {
-         _alarms[index] = AlarmInfo(
-           id: alarm.id,
-           location: alarm.location,
-           latitude: alarm.latitude,
-           longitude: alarm.longitude,
-           isActive: false, 
-         );
-      }
-    });
+    await _isarService.toggleAlarmActive(alarm.id, false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("✅ System Alarm set for 1 minute from now!"),
-        backgroundColor: Colors.green,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("✅ Arriving at ${alarm.location}! Alarm scheduled for 1 minute from now."),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
-  Future<void> _addNewAlarm(String locationName) async {
-    final name = locationName.trim();
+  Future<void> _addStationAlarm(Station station) async {
+    double? distanceInKm;
+    try {
+      final currentPos = await _determinePosition();
+      final distMeters = Geolocator.distanceBetween(
+        currentPos.latitude,
+        currentPos.longitude,
+        station.latitude,
+        station.longitude,
+      );
+      distanceInKm = distMeters / 1000;
+    } catch (_) {}
+
+    final newAlarm = AlarmInfo(
+      id: '${station.code}_${DateTime.now().millisecondsSinceEpoch}',
+      location: '${station.name} (${station.code})',
+      latitude: station.latitude,
+      longitude: station.longitude,
+      isActive: true,
+    );
+
+    await _isarService.saveAlarm(newAlarm);
+
+    _searchController.clear();
+    _searchFocusNode.unfocus();
+    setState(() {
+      _suggestions = [];
+    });
+
+    if (mounted) {
+      final distText = distanceInKm != null
+          ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+          : "";
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Alarm set for ${station.displayName}!$distText"),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _addNewAlarm(String query) async {
+    final name = query.trim();
     if (name.isEmpty) return;
 
+    final offlineMatches = _stationService.search(name, limit: 1);
+    if (offlineMatches.isNotEmpty) {
+      await _addStationAlarm(offlineMatches.first);
+      return;
+    }
+
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Searching for '$name'..."),
+        content: Text("Searching for '$name' via online maps..."),
         duration: const Duration(seconds: 1),
         backgroundColor: Colors.black54,
         behavior: SnackBarBehavior.floating,
@@ -142,39 +224,44 @@ class _HomePageState extends State<HomePage> {
 
     try {
       List<Location> locations = await locationFromAddress(name);
-      
+
       if (locations.isNotEmpty) {
         final searchedLocation = locations.first;
-        Position currentPosition = await _determinePosition();
-        
-        double distanceInMeters = Geolocator.distanceBetween(
-          currentPosition.latitude,
-          currentPosition.longitude,
-          searchedLocation.latitude,
-          searchedLocation.longitude,
-        );
-        
-        double distanceInKm = distanceInMeters / 1000;
-
-        if (!mounted) return;
-        setState(() {
-          _alarms.add(
-            AlarmInfo(
-              id: DateTime.now().toString(),
-              location: name,
-              latitude: searchedLocation.latitude,
-              longitude: searchedLocation.longitude,
-              isActive: true,
-            ),
+        double? distanceInKm;
+        try {
+          Position currentPosition = await _determinePosition();
+          double distanceInMeters = Geolocator.distanceBetween(
+            currentPosition.latitude,
+            currentPosition.longitude,
+            searchedLocation.latitude,
+            searchedLocation.longitude,
           );
-        });
+          distanceInKm = distanceInMeters / 1000;
+        } catch (_) {}
+
+        final newAlarm = AlarmInfo(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          location: name,
+          latitude: searchedLocation.latitude,
+          longitude: searchedLocation.longitude,
+          isActive: true,
+        );
+
+        await _isarService.saveAlarm(newAlarm);
 
         _searchController.clear();
-        FocusScope.of(context).unfocus();
-        
+        _searchFocusNode.unfocus();
+        setState(() {
+          _suggestions = [];
+        });
+
+        if (!mounted) return;
+        final distText = distanceInKm != null
+            ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+            : "";
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Alarm set! You are ${distanceInKm.toStringAsFixed(1)} km away."),
+            content: Text("Alarm set!$distText"),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -184,7 +271,7 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Could not find '$name'. Check spelling or internet."),
+          content: Text("Could not find '$name'. Check station code or spelling."),
           backgroundColor: Colors.red.withValues(alpha: 0.8),
           behavior: SnackBarBehavior.floating,
         ),
@@ -192,10 +279,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _deleteAlarm(String id) {
-    setState(() {
-      _alarms.removeWhere((alarm) => alarm.id == id);
-    });
+  Future<void> _deleteAlarm(String id) async {
+    await _isarService.deleteAlarm(id);
+  }
+
+  Future<void> _toggleAlarm(String id, bool isActive) async {
+    await _isarService.toggleAlarmActive(id, isActive);
   }
 
   @override
@@ -213,11 +302,12 @@ class _HomePageState extends State<HomePage> {
         Scaffold(
           backgroundColor: Colors.transparent,
           extendBody: true,
-          body: _selectedIndex == 0 
-              ? _buildSearchPage() 
+          body: _selectedIndex == 0
+              ? _buildSearchPage()
               : AlarmPage(
-                  alarms: _alarms, 
+                  alarms: _alarms,
                   onDelete: _deleteAlarm,
+                  onToggle: _toggleAlarm,
                 ),
           bottomNavigationBar: Container(
             height: 120,
@@ -230,13 +320,11 @@ class _HomePageState extends State<HomePage> {
               backgroundColor: Colors.black.withValues(alpha: 0.8),
               unselectedItemColor: Colors.white,
               outlineBorderColor: Colors.white.withValues(alpha: 0.2),
-              
               onTap: (int index) {
                 setState(() {
                   _selectedIndex = index;
                 });
               },
-              
               items: [
                 CrystalNavigationBarItem(
                   icon: Icons.home_filled,
@@ -262,10 +350,11 @@ class _HomePageState extends State<HomePage> {
       child: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const SizedBox(height: 60),
                 Text(
                   "RailAlarm",
                   style: GoogleFonts.urbanist(
@@ -275,31 +364,42 @@ class _HomePageState extends State<HomePage> {
                     letterSpacing: 1.5,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 const Divider(
                   color: Colors.white54,
                   thickness: 1,
                   indent: 20,
                   endIndent: 20,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
                 const Icon(
                   Icons.train_outlined,
-                  size: 120,
+                  size: 100,
                   color: Colors.white,
                 ),
-                const SizedBox(height: 60),
+                const SizedBox(height: 40),
                 TextField(
                   controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  onChanged: _onSearchChanged,
                   onSubmitted: _addNewAlarm,
                   style: const TextStyle(color: Colors.white),
                   cursorColor: Colors.white,
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.white.withValues(alpha: 0.2),
-                    hintText: "Enter location",
+                    hintText: "Enter station name or code (e.g. NDLS)",
                     hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
                     prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white70),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                            },
+                          )
+                        : null,
                     contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -307,19 +407,86 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
+                if (_suggestions.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildSuggestionsList(),
+                ],
+                const SizedBox(height: 30),
                 Text(
-                  "Type your Location.\nAlarm will ring 10 kms\nbefore the destination.",
+                  "Offline Indian Railways Stations Search.\nAlarm triggers automatically 10 km\nbefore the destination station.",
                   textAlign: TextAlign.center,
                   style: GoogleFonts.victorMono(
                     color: Colors.white70,
-                    fontSize: 14,
+                    fontSize: 13,
                     height: 1.5,
                   ),
                 ),
-                const SizedBox(height: 150),
+                const SizedBox(height: 140),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsList() {
+    return Container(
+      constraints: const BoxConstraints(maxHeight: 250),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: ListView.separated(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            itemCount: _suggestions.length,
+            separatorBuilder: (context, index) => Divider(
+              color: Colors.white.withValues(alpha: 0.1),
+              height: 1,
+            ),
+            itemBuilder: (context, index) {
+              final station = _suggestions[index];
+              return ListTile(
+                dense: true,
+                leading: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    station.code,
+                    style: GoogleFonts.victorMono(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  station.name,
+                  style: GoogleFonts.urbanist(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: const Icon(
+                  Icons.alarm_add,
+                  color: Colors.greenAccent,
+                  size: 20,
+                ),
+                onTap: () => _addStationAlarm(station),
+              );
+            },
           ),
         ),
       ),
