@@ -439,19 +439,27 @@ class _HomePageState extends State<HomePage> {
           _searchFocusNode.unfocus();
           setState(() {
             _suggestions = [];
+            _selectedIndex = 1;
           });
 
           if (mounted) {
             final distText = distanceInKm != null
-                ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+                ? " (${distanceInKm.toStringAsFixed(1)} km away)"
                 : "";
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
-                  "Alarm set! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+                  "Alarm active! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
                 ),
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.green.shade800,
                 behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: "VIEW",
+                  textColor: Colors.white,
+                  onPressed: () {
+                    if (mounted) setState(() => _selectedIndex = 1);
+                  },
+                ),
               ),
             );
           }
