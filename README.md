@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="assets/images/icon(1)/icon_1_glassmorphic_white.png" width="128" height="128" alt="RailAlarm Logo" />
+  <img src="assets/icons/app_icon.png" width="128" height="128" alt="RailAlarm Logo" />
 
   # RailAlarm
   
