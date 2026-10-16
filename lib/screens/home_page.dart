@@ -31,6 +31,7 @@ class _HomePageState extends State<HomePage> {
   List<Station> _suggestions = [];
 
   double _selectedLeadDistance = 10.0;
+  bool _isAdding = false;
   Position? _currentPosition;
   AdaptiveTrackingDecision? _lastDecision;
   Timer? _adaptivePollTimer;
@@ -83,23 +84,31 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<Position> _determinePosition({LocationAccuracy accuracy = LocationAccuracy.high}) async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return Future.error('Location services are disabled.');
+  Future<Position?> _determinePosition({LocationAccuracy accuracy = LocationAccuracy.high}) async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return null;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return null;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        return null;
+      }
+      return await Geolocator.getCurrentPosition(
+        locationSettings: LocationSettings(accuracy: accuracy),
+      ).timeout(const Duration(seconds: 4));
+    } catch (_) {
+      try {
+        return await Geolocator.getLastKnownPosition();
+      } catch (_) {
+        return null;
       }
     }
-    if (permission == LocationPermission.deniedForever) {
-      return Future.error('Location permissions are permanently denied.');
-    }
-    return await Geolocator.getCurrentPosition(
-      locationSettings: LocationSettings(accuracy: accuracy),
-    );
   }
 
   void _startTracking() {
@@ -129,6 +138,12 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _currentPosition = position;
       });
+
+      if (position == null) {
+        // Retry in 15 seconds if position couldn't be obtained
+        _adaptivePollTimer = Timer(const Duration(seconds: 15), _runAdaptiveCheck);
+        return;
+      }
 
       // 1. Evaluate all active alarms
       for (final alarm in activeAlarms) {
@@ -298,141 +313,173 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _addStationAlarm(Station station) async {
-    double? distanceInKm;
+    if (_isAdding) return;
+    setState(() => _isAdding = true);
+
     try {
-      final currentPos = await _determinePosition();
-      final distMeters = Geolocator.distanceBetween(
-        currentPos.latitude,
-        currentPos.longitude,
-        station.latitude,
-        station.longitude,
+      double? distanceInKm;
+      try {
+        final currentPos = await _determinePosition();
+        if (currentPos != null) {
+          final distMeters = Geolocator.distanceBetween(
+            currentPos.latitude,
+            currentPos.longitude,
+            station.latitude,
+            station.longitude,
+          );
+          distanceInKm = distMeters / 1000;
+        }
+      } catch (_) {}
+
+      final newAlarm = AlarmInfo(
+        id: '${station.code}_${DateTime.now().millisecondsSinceEpoch}',
+        location: '${station.name} (${station.code})',
+        latitude: station.latitude,
+        longitude: station.longitude,
+        isActive: true,
+        leadDistanceKm: _selectedLeadDistance,
       );
-      distanceInKm = distMeters / 1000;
-    } catch (_) {}
 
-    final newAlarm = AlarmInfo(
-      id: '${station.code}_${DateTime.now().millisecondsSinceEpoch}',
-      location: '${station.name} (${station.code})',
-      latitude: station.latitude,
-      longitude: station.longitude,
-      isActive: true,
-      leadDistanceKm: _selectedLeadDistance,
-    );
+      await _isarService.saveAlarm(newAlarm);
 
-    await _isarService.saveAlarm(newAlarm);
+      _searchController.clear();
+      _searchFocusNode.unfocus();
+      setState(() {
+        _suggestions = [];
+      });
 
-    _searchController.clear();
-    _searchFocusNode.unfocus();
-    setState(() {
-      _suggestions = [];
-    });
-
-    if (mounted) {
-      final distText = distanceInKm != null
-          ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
-          : "";
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            "Alarm set for ${station.displayName}! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+      if (mounted) {
+        final distText = distanceInKm != null
+            ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+            : "";
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Alarm set for ${station.displayName}! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+            ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
           ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+        );
+      }
+      _runAdaptiveCheck();
+    } finally {
+      if (mounted) setState(() => _isAdding = false);
     }
-    _runAdaptiveCheck();
   }
 
   Future<void> _addNewAlarm(String query) async {
     final name = query.trim();
-    if (name.isEmpty) return;
-
-    // Check if coordinates were entered (e.g. "12.9716, 77.5946")
-    final coordRegex = RegExp(r'^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$');
-    final coordMatch = coordRegex.firstMatch(name);
-    if (coordMatch != null) {
-      final lat = double.tryParse(coordMatch.group(1)!);
-      final lng = double.tryParse(coordMatch.group(3)!);
-      if (lat != null && lng != null) {
-        double? distanceInKm;
-        try {
-          Position currentPosition = await _determinePosition();
-          double distanceInMeters = Geolocator.distanceBetween(
-            currentPosition.latitude,
-            currentPosition.longitude,
-            lat,
-            lng,
-          );
-          distanceInKm = distanceInMeters / 1000;
-        } catch (_) {}
-
-        final newAlarm = AlarmInfo(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          location: "Location (${lat.toStringAsFixed(3)}, ${lng.toStringAsFixed(3)})",
-          latitude: lat,
-          longitude: lng,
-          isActive: true,
-          leadDistanceKm: _selectedLeadDistance,
+    if (name.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Please type a station, city, or coordinates first."),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
-
-        await _isarService.saveAlarm(newAlarm);
-        _searchController.clear();
-        _searchFocusNode.unfocus();
-        setState(() {
-          _suggestions = [];
-        });
-
-        if (mounted) {
-          final distText = distanceInKm != null
-              ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
-              : "";
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                "Alarm set! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
-              ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        _runAdaptiveCheck();
-        return;
       }
-    }
-
-    final offlineMatches = _stationService.search(name, limit: 1);
-    if (offlineMatches.isNotEmpty) {
-      await _addStationAlarm(offlineMatches.first);
       return;
     }
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Searching for '$name'..."),
-        duration: const Duration(seconds: 1),
-        backgroundColor: Colors.black54,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (_isAdding) return;
+    setState(() => _isAdding = true);
 
     try {
-      List<Location> locations = await locationFromAddress(name);
+      // 1. Check if coordinates were entered (e.g. "12.9716, 77.5946")
+      final coordRegex = RegExp(r'^\s*(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)\s*$');
+      final coordMatch = coordRegex.firstMatch(name);
+      if (coordMatch != null) {
+        final lat = double.tryParse(coordMatch.group(1)!);
+        final lng = double.tryParse(coordMatch.group(3)!);
+        if (lat != null && lng != null) {
+          double? distanceInKm;
+          try {
+            Position? currentPosition = await _determinePosition();
+            if (currentPosition != null) {
+              double distanceInMeters = Geolocator.distanceBetween(
+                currentPosition.latitude,
+                currentPosition.longitude,
+                lat,
+                lng,
+              );
+              distanceInKm = distanceInMeters / 1000;
+            }
+          } catch (_) {}
+
+          final newAlarm = AlarmInfo(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            location: "Location (${lat.toStringAsFixed(3)}, ${lng.toStringAsFixed(3)})",
+            latitude: lat,
+            longitude: lng,
+            isActive: true,
+            leadDistanceKm: _selectedLeadDistance,
+          );
+
+          await _isarService.saveAlarm(newAlarm);
+          _searchController.clear();
+          _searchFocusNode.unfocus();
+          setState(() {
+            _suggestions = [];
+          });
+
+          if (mounted) {
+            final distText = distanceInKm != null
+                ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+                : "";
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  "Alarm set! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          _runAdaptiveCheck();
+          return;
+        }
+      }
+
+      // 2. Check offline database (instant, works with zero network)
+      final offlineMatches = _stationService.search(name, limit: 1);
+      if (offlineMatches.isNotEmpty) {
+        await _addStationAlarm(offlineMatches.first);
+        return;
+      }
+
+      // 3. Fallback to online geocoding
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Searching for '$name'..."),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.black54,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      final locations = await locationFromAddress(name).timeout(
+        const Duration(seconds: 6),
+        onTimeout: () => [],
+      );
 
       if (locations.isNotEmpty) {
         final searchedLocation = locations.first;
         double? distanceInKm;
         try {
-          Position currentPosition = await _determinePosition();
-          double distanceInMeters = Geolocator.distanceBetween(
-            currentPosition.latitude,
-            currentPosition.longitude,
-            searchedLocation.latitude,
-            searchedLocation.longitude,
-          );
-          distanceInKm = distanceInMeters / 1000;
+          Position? currentPosition = await _determinePosition();
+          if (currentPosition != null) {
+            double distanceInMeters = Geolocator.distanceBetween(
+              currentPosition.latitude,
+              currentPosition.longitude,
+              searchedLocation.latitude,
+              searchedLocation.longitude,
+            );
+            distanceInKm = distanceInMeters / 1000;
+          }
         } catch (_) {}
 
         final newAlarm = AlarmInfo(
@@ -452,30 +499,44 @@ class _HomePageState extends State<HomePage> {
           _suggestions = [];
         });
 
-        if (!mounted) return;
-        final distText = distanceInKm != null
-            ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
-            : "";
+        if (mounted) {
+          final distText = distanceInKm != null
+              ? " You are ${distanceInKm.toStringAsFixed(1)} km away."
+              : "";
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "Alarm set for $name! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        _runAdaptiveCheck();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Could not find '$name'. Try station code/name or coordinates."),
+              backgroundColor: Colors.red.withValues(alpha: 0.8),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              "Alarm set for $name! Ring at <${_selectedLeadDistance.toStringAsFixed(0)}km.$distText",
-            ),
-            backgroundColor: Colors.green,
+            content: Text("Could not find '$name'. Check internet or enter station code."),
+            backgroundColor: Colors.red.withValues(alpha: 0.8),
             behavior: SnackBarBehavior.floating,
           ),
         );
-        _runAdaptiveCheck();
       }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Could not find '$name'. Try another place name or enter coordinates (lat, lng)."),
-          backgroundColor: Colors.red.withValues(alpha: 0.8),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+    } finally {
+      if (mounted) setState(() => _isAdding = false);
     }
   }
 
@@ -701,8 +762,10 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 14),
                 _buildLeadDistanceSelector(),
+                const SizedBox(height: 18),
+                _buildAddAlarmButton(),
                 if (_suggestions.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   _buildSuggestionsList(),
                 ],
                 const SizedBox(height: 24),
@@ -826,6 +889,53 @@ class _HomePageState extends State<HomePage> {
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAddAlarmButton() {
+    return GestureDetector(
+      onTap: _isAdding ? null : () => _addNewAlarm(_searchController.text),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: _isAdding
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.add_alarm, color: Colors.black, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    "ADD ALARM",
+                    style: GoogleFonts.urbanist(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
