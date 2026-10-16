@@ -28,38 +28,30 @@ RailAlarm is an offline-first, battery-efficient, location-triggered wake-up com
 
 ---
 
-## Remaining Development Phases
+## Target Development Phases
 
-### Phase 3: The Dedicated Ringer / Wake-Up Screen ⏰
-* **Objective**: Provide a sleep-resistant, full-screen UI when the alarm rings.
+### Phase 3: Native System Alarm & Arrival Dispatch Engine ⏰
+* **Architectural Rationale**: Delegating to the device's native system alarm clock ensures 100% fail-safe reliability against OEM background task killers, allows users to wake up to their familiar ringtones, and keeps the user experience simple.
 * **Key Deliverables**:
-  1. **Full-Screen Ringing Route**: Match the reference design with *"You are About to Reach"*, destination name, and bottom nav indicator.
-  2. **High-Affordance Controls**: Large pill-shaped **SNOOZE** and **STOP** buttons designed for sleepy travelers.
-  3. **Smart Snooze Logic**: Cap snooze intervals (e.g., 3 minutes) based on vehicle speed so users don't overshoot their stop.
+  1. **Dedicated AlarmDispatchService**: Native Android `SET_ALARM` intent handler with structured parameters (`EXTRA_MESSAGE`, `EXTRA_HOUR`, `EXTRA_MINUTES`, `EXTRA_SKIP_UI`, `EXTRA_VIBRATE`).
+  2. **Instant "Test System Alarm" Trigger**: Quick-action test button on each alarm card for travelers to test that their phone's clock app responds.
+  3. **Multi-Platform Fallback Feedback**: Graceful in-app arrival confirmation banner for web, desktop, and non-Android devices.
+  4. **Arrival Banner / Status HUD**: Frosted-glass arrival feedback inside the app when destination is reached.
 
 ---
 
-### Phase 4: Audio, Haptics & DND Override Engine 🔊
-* **Objective**: Guarantee the alarm awakens deep sleepers even if the phone is set to Silent or Do Not Disturb.
+### Phase 4: Background Resilience & Persistent Trip Status 🛡️
+* **Objective**: Keep tracking alive when the phone screen is off and modern Android OS enters deep sleep (Doze Mode).
 * **Key Deliverables**:
-  1. **Hardware Alarm Stream (`STREAM_ALARM`)**: Route alert audio through the system alarm stream rather than media volume.
-  2. **Vibration Patterns**: Heavy intermittent pulses that cut through pockets and berths even with earplugs on.
-  3. **Gradual Volume Ramp-Up (Crescendo)**: Optional gentle wake-up to avoid startling fellow coach passengers.
+  1. **Native Permissions Audit**: Configure Android permissions (`SCHEDULE_EXACT_ALARM`, `USE_EXACT_ALARM`, `WAKE_LOCK`, `FOREGROUND_SERVICE`, `ACCESS_BACKGROUND_LOCATION`).
+  2. **Live Trip Status HUD**: Persistent status card and notification displaying real-time distance and next check interval (*"34 km to Palakkad • Next check in 8 min"*).
+  3. **Battery Optimization Helper**: In-app prompt and guidance to whitelist RailAlarm from aggressive OEM battery savers (Xiaomi, Samsung, OnePlus).
 
 ---
 
-### Phase 5: Background Resilience & OS Wake Locks 🛡️
-* **Objective**: Keep tracking alive when the phone screen is off and the OS enters deep sleep (Doze Mode).
+### Phase 5: Release Readiness & Platform Polish 🚀
+* **Objective**: Production readiness, code cleanup, and distribution audit.
 * **Key Deliverables**:
-  1. **Persistent Foreground Service**: Android notification displaying real-time distance and ETA (*"34 km to Palakkad • Next check in 8 min"*).
-  2. **Screen Wake & Turn-On Intent**: Request `FLAG_TURN_SCREEN_ON` and `FLAG_SHOW_WHEN_LOCKED` so the screen lights up automatically when the threshold is reached.
-  3. **Battery Optimization Whitelist Prompt**: One-tap dialog guiding users to exclude the app from aggressive manufacturer battery killers.
-
----
-
-### Phase 6: Testing, Polish & Release Readiness 🚀
-* **Objective**: Field-ready stability and store release.
-* **Key Deliverables**:
-  1. **Simulated Route Testing**: Mock GPS track playback to verify transitions across all distance tiers.
-  2. **Offline Fallback Validation**: Verify operation through simulated complete cellular dead zones.
-  3. **Android APK & iOS Release Builds**: Permission audits and production signing.
+  1. **Release Configuration**: App naming, icons, metadata, and production manifest sanitization.
+  2. **Simulated Route Testing**: Verification of the full lifecycle across simulated movement and threshold triggers.
+  3. **Codebase & Architecture Documentation**: Final audit of `Design.md` and `Agents.md`.
