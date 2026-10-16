@@ -16,6 +16,11 @@ This document serves as the operational guide and project reference for all AI c
    - Maintain strict null safety and address all `flutter analyze` warnings.
    - Use declarative UI with Flutter widgets and clean architectural separation.
 5. **Preserve Documentation**: Keep `Agents.md` and `Design.md` synchronized whenever architectural decisions, dependencies, or conventions change.
+6. **Design & Branding Cohesion**: Every new screen, widget, dialog, and control must strictly conform to RailAlarm's established visual identity:
+   - **Organic Dark Glassmorphism**: Utilize the wavy organic background (`background.jpg`) layered with frosted glass surfaces (`BackdropFilter` blur 10, subtle translucent borders `white.withValues(alpha: 0.15-0.25)`).
+   - **Typography Hierarchy**: Ultra-light `GoogleFonts.urbanist` (weight 100, letter spacing) for headers; `GoogleFonts.victorMono` for monospace telemetry, station codes, and stats; semi-bold `urbanist` for card titles.
+   - **Pill Shapes & Circular Toggles**: Capsule containers with circular icon buttons. Active states feature solid white fills with black glyphs; inactive states are greyed out (never crossed out or jarring).
+   - **Sleep-First Ergonomics**: High-contrast, large touch targets optimized for low-cognition, half-awake travelers in dark train berths and bus seats.
 
 ---
 
